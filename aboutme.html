@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farouk Serragedine - Interactive Console Portfolio</title>
+    <style>
+        :root {
+            --bg-color: #1e1e2e;
+            --text-color: #cdd6f4;
+            --prompt-color: #a6e3a1;
+            --cmd-color: #89b4fa;
+            --accent-color: #f5c2e7;
+            --font-family: 'JetBrains Mono', 'Ubuntu Mono', monospace;
+        }
+        
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            line-height: 1.4;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        #terminal {
+            height: 100%;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-color) var(--bg-color);
+        }
+        
+        #terminal::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        #terminal::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+        
+        #terminal::-webkit-scrollbar-thumb {
+            background-color: var(--accent-color);
+            border-radius: 4px;
+        }
+        
+        #output {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        #input-line {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        
+        #prompt {
+            color: var(--prompt-color);
+            margin-right: 8px;
+            font-weight: bold;
+        }
+        
+        #input {
+            background: transparent;
+            border: none;
+            color: var(--cmd-color);
+            font-family: inherit;
+            font-size: inherit;
+            outline: none;
+            flex-grow: 1;
+        }
+        
+        .command {
+            color: var(--cmd-color);
+            font-weight: bold;
+        }
+        
+        .error {
+            color: #f38ba8;
+        }
+        
+        a {
+            color: #89dceb;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        a:hover {
+            color: #f9e2af;
+            text-decoration: underline;
+        }
+        
+        .matrix {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            background-color: black;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="terminal">
+        <div id="output"></div>
+        <div id="input-line">
+            <span id="prompt">guest@farouk-portfolio:~$</span>
+            <input type="text" id="input" autofocus>
+        </div>
+    </div>
+    <canvas id="matrix" class="matrix"></canvas>
+
+    <script>
+        const terminal = document.getElementById('terminal');
+        const output = document.getElementById('output');
+        const input = document.getElementById('input');
+        const prompt = document.getElementById('prompt');
+        const matrix = document.getElementById('matrix');
+
+        const commands = {
+            help: `Available commands:
+  help      - Display this help message
+  clear     - Clear the terminal
+  whoami    - Display information about Farouk Serragedine
+  skills    - List Farouk's technical skills
+  projects  - Show notable projects
+  contact   - Display contact information
+  github    - Open GitHub profile
+  portfolio - Open YouTube portfolio
+  matrix    - Enter the Matrix (Easter Egg)
+  konami    - Try the Konami Code (↑↑↓↓←→←→BA)`,
+            whoami: `Farouk Serragedine - Lead Software Engineer
+
+Currently responsible for the VisualHull project for computer vision and digital fabrication.
+Expert in RhinoCommon, RhinoCompute, Python, C#, and web apps - everything related to 3D.
+Experienced in automating mechanical and naval systems, digital fabrication, and high-automation production/design.`,
+            skills: `Technical Skills:
+- Python scripting (NumPy, OpenCV, RhinoCompute)
+- C#/VB.net (RhinoCommon SDK)
+- Node.js/PostgreSQL
+- Machine Learning (TensorFlow, scikit-learn)
+- HTML/CSS/JavaScript
+- RhinoCompute
+- Digital Fabrication
+- Full stack development`,
+            projects: `Notable Projects:
+1. Jewelry production, cost estimation, and automated inventory management app
+2. Web app for jewelry customization, sharing, and client-supplier communication
+3. VisualHull project for computer vision and digital fabrication
+4. Multiple digital fabrication applications
+5. Machine learning systems for cost estimation and computer vision`,
+            contact: `Contact Information:
+Email: farouk.serragedine@gmail.com
+Phone: +39 3519382998
+Address: Via Roma 190, 19122, La Spezia (SP) Italy`,
+            github: `Opening GitHub profile...
+Sorry, GitHub profile link not available. You can check the portfolio instead.`,
+            portfolio: `Opening YouTube portfolio...
+<a href="https://www.youtube.com/channel/UCuzuZ22bHOSt_H0LS1iID_A" target="_blank">Click here to view Farouk's portfolio</a>`,
+            matrix: `Entering the Matrix...
+Use 'clear' command to exit.`,
+            konami: `⭐️ Konami Code activated! ⭐️
+You've unlocked a secret: Farouk once automated an entire jewelry production line using Python and RhinoCompute, increasing efficiency by 300%!`
+        };
+
+        function executeCommand(cmd) {
+            const cleanCmd = cmd.trim().toLowerCase();
+            output.innerHTML += `<div><span id="prompt">guest@farouk-portfolio:~$</span> <span class="command">${cmd}</span></div>`;
+            
+            if (cleanCmd === 'clear') {
+                output.innerHTML = '';
+                if (matrix.style.display === 'block') {
+                    matrix.style.display = 'none';
+                }
+                return;
+            }
+            
+            if (cleanCmd === 'matrix') {
+                matrix.style.display = 'block';
+                startMatrix();
+            }
+            
+            if (commands.hasOwnProperty(cleanCmd)) {
+                output.innerHTML += `<div>${commands[cleanCmd]}</div>`;
+            } else {
+                output.innerHTML += `<div class="error">Command not found: ${cmd}. Type 'help' for available commands.</div>`;
+            }
+            
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        input.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                const cmd = this.value;
+                executeCommand(cmd);
+                this.value = '';
+            }
+        });
+
+        // Konami Code Easter Egg
+        const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+        let konamiIndex = 0;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === konamiCode[konamiIndex]) {
+                konamiIndex++;
+                if (konamiIndex === konamiCode.length) {
+                    executeCommand('konami');
+                    konamiIndex = 0;
+                }
+            } else {
+                konamiIndex = 0;
+            }
+        });
+
+        // Matrix Easter Egg
+        function startMatrix() {
+            const ctx = matrix.getContext('2d');
+            matrix.width = window.innerWidth;
+            matrix.height = window.innerHeight;
+            const katakana = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン';
+            const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const nums = '0123456789';
+            const alphabet = katakana + latin + nums;
+            const fontSize = 16;
+            const columns = matrix.width/fontSize;
+            const rainDrops = [];
+
+            for( let x = 0; x < columns; x++ ) {
+                rainDrops[x] = 1;
+            }
+
+            const draw = () => {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.fillRect(0, 0, matrix.width, matrix.height);
+                ctx.fillStyle = '#0F0';
+                ctx.font = fontSize + 'px monospace';
+
+                for(let i = 0; i < rainDrops.length; i++) {
+                    const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+                    ctx.fillText(text, i*fontSize, rainDrops[i]*fontSize);
+                    
+                    if(rainDrops[i]*fontSize > matrix.height && Math.random() > 0.975){
+                        rainDrops[i] = 0;
+                    }
+                    rainDrops[i]++;
+                }
+            };
+
+            setInterval(draw, 30);
+        }
+
+        // Initial welcome message and help command
+        window.onload = () => {
+            output.innerHTML = `Welcome to Farouk Serragedine's interactive portfolio terminal!
+Type 'help' to see available commands.
+
+`;
+            executeCommand('help');
+        };
+    </script>
+</body>
+</html>
